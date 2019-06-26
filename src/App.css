@@ -1,0 +1,75 @@
+body {
+  line-height: 1.3 !important;
+}
+.youtube_link,
+.soundcloud_link {
+  color: #6c757d !important;
+  font-size: 1.3em !important;
+}
+.youtube_link :hover {
+  color: #ff0000 !important;
+}
+.soundcloud_link:hover {
+  color: #ff8800 !important;
+}
+.media-song {
+  font-size: 1.2em !important;
+}
+.media-song .text-muted {
+  vertical-align: text-top !important;
+}
+
+/* animation */
+.fade-in {
+  animation: fadeIn ease 5s;
+  -webkit-animation: fadeIn ease 5s;
+  -moz-animation: fadeIn ease 5s;
+  -o-animation: fadeIn ease 5s;
+  -ms-animation: fadeIn ease 5s;
+}
+
+
+@keyframes fadeIn{
+  0% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
+
+@-moz-keyframes fadeIn {
+  0% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
+
+@-webkit-keyframes fadeIn {
+  0% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
+
+@-o-keyframes fadeIn {
+  0% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
+
+@-ms-keyframes fadeIn {
+  0% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
