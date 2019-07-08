@@ -1,18 +1,7 @@
 export default {
-    "liveUpdates": true,
+    "live_updates": true,
     "api": {
-        "endpoint": process.env.API_URL || "http://localhost:8080"
+        "endpoint": process.env.API_URL || "http://api.lvh.me:8080"
     },
-    "musicLibraries": {
-        "youtube": {
-            "prefix": "https://www.youtube.com/results?search_query=",
-            "iconClass": "fa-youtube",
-            "linkClass": "youtube_link",
-        },
-        "soundcloud": {
-            "prefix": "https://soundcloud.com/search?q=",
-            "iconClass": "fa-soundcloud",
-            "linkClass": "soundcloud_link",
-        }
-    }
+    "csrf_cookie": "nicecream_history_csrf"
 };

@@ -18,12 +18,12 @@ export default {
             filters["offset"] = offset;
         }
 
-        const query_string = Object.keys(filters).map((key) => `${key}=${filters[key]}`).join("&")
+        const query_string = Object.keys(filters).map((key) => `${key}=${filters[key]}`).join("&");
         const { data } = await httpService.get(`/history${((query_string) ? "?" + query_string : "")}`);
         return data;
     },
 
     channelHistoryEvents: (messageCallback, errorCallback = undefined) => {
-        return sseService.connect("/history", "history", messageCallback, errorCallback);
+        return sseService.connect("/history/events", "history", messageCallback, errorCallback);
     }
 };
