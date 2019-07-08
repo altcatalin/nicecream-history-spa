@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
-import { ChannelType } from "../types";
 
 class ChannelButton extends Component {
     setInputClasses = (selected) => {
@@ -12,15 +11,13 @@ class ChannelButton extends Component {
     };
 
     render() {
-        const { id, name, selected } = this.props.channel;
+        const { id, name, selected, onClick } = this.props;
 
         return (
             <label 
                 className={this.setInputClasses(selected)} 
                 key={id} 
-                onClick={() => {
-                    this.props.onClick(id);
-                }}
+                onClick={() => { onClick(id); }}
                 >
                 <input 
                     type="radio" 
@@ -34,7 +31,9 @@ class ChannelButton extends Component {
 }
 
 ChannelButton.propTypes = {
-    channel: ChannelType.isRequired,
+    id: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    selected: PropTypes.bool.isRequired,
     onClick: PropTypes.func.isRequired
 };
 

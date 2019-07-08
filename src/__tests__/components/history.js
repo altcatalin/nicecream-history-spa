@@ -20,7 +20,7 @@ describe("History", () => {
     let wrapper;
 
     beforeAll(async () => {
-        wrapper = mount(<History />);
+        wrapper = mount(<History signedIn={false}/>);
         const instance = wrapper.instance();
         await instance.componentDidMount();
     });

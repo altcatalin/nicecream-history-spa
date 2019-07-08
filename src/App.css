@@ -2,11 +2,12 @@ body {
   line-height: 1.3 !important;
 }
 .youtube_link,
-.soundcloud_link {
+.soundcloud_link,
+.bookmark_link {
   color: #6c757d !important;
   font-size: 1.3em !important;
 }
-.youtube_link :hover {
+.youtube_link :hover, .bookmark_link :hover, .bookmark_link.active {
   color: #ff0000 !important;
 }
 .soundcloud_link:hover {
@@ -28,6 +29,12 @@ body {
   -ms-animation: fadeIn ease 5s;
 }
 
+.avatar {
+  vertical-align: sub;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
 
 @keyframes fadeIn{
   0% {

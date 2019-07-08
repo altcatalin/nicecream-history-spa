@@ -4,6 +4,7 @@ import logger from "./loggerService";
 import config from "../config";
 
 axios.defaults.baseURL = config.api.endpoint;
+axios.defaults.withCredentials = true
 
 axios.interceptors.response.use(null, error => {
     const expectedError =
@@ -20,5 +21,7 @@ axios.interceptors.response.use(null, error => {
 });
 
 export default {
-    get: axios.get
+    get: axios.get,
+    post: axios.post,
+    delete: axios.delete
 };

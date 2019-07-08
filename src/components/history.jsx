@@ -1,15 +1,18 @@
 import React, { Component } from "react";
 import ChannelButton from "./channelButton";
-import HistoryRecord from "./historyRecord";
+import HistoryItem from "./historyItem";
 import historyService from "../services/historyService";
 import config from "../config";
+import PropTypes from "prop-types";
+import userService from "../services/userService";
+import logger from "../services/loggerService";
 
 class History extends Component {
     state = {
         channels: [],
         content: [],
         events: {
-            status: config.liveUpdates,
+            status: false,
             source: undefined
         }
     };
@@ -27,15 +30,11 @@ class History extends Component {
             return channel;
         });
         
-        this.setState({ channels });
+        this.setState({ channels, events: { status: config.live_updates } });
     }
 
     async componentWillUnmount() {
-        const { status: eventsStatus, source: eventsSource } = this.state.events;
-
-        if (eventsStatus === false && eventsSource !== undefined) {
-            this.closeEventUpdate();
-        }
+        await this.toggleEventStream(false);
     }
 
     async componentDidUpdate(prevProps, prevState) {
@@ -47,18 +46,10 @@ class History extends Component {
             await this.updateChannelHistory(content, true);
         }
 
-        const { status: eventsStatus, source: eventsSource } = this.state.events;
-
-        if (eventsStatus === true && eventsSource === undefined) {
-            this.initEventUpdate();
-        }
-
-        if (eventsStatus === false && eventsSource !== undefined) {
-            this.closeEventUpdate();
-        }
+        await this.toggleEventStream(this.state.events.status);
     }
 
-    async updateChannelHistory(newContent, replace = false, append = true) {
+    updateChannelHistory = async (newContent, replace = false, append = true) => {
         if (replace === false) {
             const currContent = JSON.parse(JSON.stringify(this.state.content))
 
@@ -95,44 +86,72 @@ class History extends Component {
         await this.updateChannelHistory(content)
     };
 
-    toggleEventUpdate = async () => {
-        const { status: prevStatus } = this.state.events;
-        const currStatus = !prevStatus;
+    toggleEventStream = async (newStatus = undefined) => {
+        const { status: currStatus, source: currSource } = this.state.events;
+        newStatus = (newStatus !== undefined) ? newStatus : !currStatus;
 
-        if (currStatus === true) {
-            this.initEventUpdate(currStatus);
+        if (newStatus === true) {
+            if (currSource === undefined) {
+                const source = historyService.channelHistoryEvents(this.handleEventStreamMessage, this.handleEventStreamError);
+                logger.log("Live updates ON");
+                this.setState({ events: { status: newStatus, source } });
+            }
         } else {
-            this.closeEventUpdate(currStatus);
+            if (currSource !== undefined) {
+                currSource.close();
+                logger.log("Live updates OFF");
+                this.setState({ events: { status: newStatus, source: undefined } });
+            }
         }
-    }
+    };
 
-    handleEventUpdate = async event => {
+    handleEventStreamMessage = async event => {
         const data = JSON.parse(event.data)
         const currChannel = this.state.channels.filter(channel => channel.selected === true)[0]
 
         if (currChannel.id === 0 || currChannel.id === data.channel_id) {
             await this.updateChannelHistory([data], false, false);
         }
-    }
+    };
 
-    handleEventUpdateError = async () => {
-        this.closeEventUpdate(false);
-    }
+    handleEventStreamError = async () => {
+        await this.toggleEventStream(false);
+    };
 
-    initEventUpdate = (status = undefined) => {
-        const newStatus = (status !== undefined) ? status : this.state.events.status;
-        const source = historyService.channelHistoryEvents(this.handleEventUpdate, this.handleEventUpdateError);
-        this.setState({ events: { status: newStatus, source: source } });
-    }
+    handleBookmark = async (song_id, bookmark_id) => {
+        const currContent = JSON.parse(JSON.stringify(this.state.content))
+        const { signedIn } = this.props;
 
-    closeEventUpdate = (status = undefined) => {
-        const newStatus = (status !== undefined) ? status : this.state.events.status;
-        this.state.events.source.close();
-        this.setState({ events: { status: newStatus, source: undefined } });
-    }
+        if (signedIn) {
+            if (bookmark_id) {
+                await userService.deleteBookmark(bookmark_id);
+                const content = currContent.map(song => {
+                    if (song["bookmark_id"] === bookmark_id) {
+                        song["bookmark_id"] = 0;
+                    }
+
+                    return song;
+                });
+
+                this.setState({ content });
+            } else {
+                const data = await userService.addBookmark(song_id);
+                const content = currContent.map(song => {
+                    if (song["song_id"] === song_id) {
+                        song["bookmark_id"] = data["id"];
+                    }
+
+                    return song;
+                });
+                
+                this.setState({ content });
+            }
+        }
+    };
 
     render() {
         const { channels, content, events } = this.state;
+        const { signedIn } = this.props;
 
         return (
             <React.Fragment>
@@ -141,13 +160,16 @@ class History extends Component {
                         <div className="media mt-3 mb-5">
                             <h3>History</h3>
                             <div className="pt-2 ml-2 flex-grow-1">
-                                <div className="form-check form-check-inline float-right">
+                                <div className="form-check form-check-inline float-right mr-0">
                                     <div className="custom-control custom-switch mr-3">
                                         <input
                                             type="checkbox"
-                                            defaultChecked={events.status}
+                                            value={events.status}
+                                            checked={events.status}
                                             className="custom-control-input form-control form-control-sm" id="live_updates"
-                                            onChange={this.toggleEventUpdate}
+                                            onChange={() => {
+                                                this.toggleEventStream();
+                                            }}
                                         />
                                         <label
                                             className="custom-control-label"
@@ -158,9 +180,11 @@ class History extends Component {
                                     <div className="btn-group btn-group-toggle" data-toggle="buttons">
                                         {channels.map(channel => {
                                             return (
-                                                <ChannelButton
-                                                    key={channel.id}
-                                                    channel={channel}
+                                                <ChannelButton 
+                                                    key={channel.id} 
+                                                    id={channel.id} 
+                                                    name={channel.name} 
+                                                    selected={channel.selected} 
                                                     onClick={this.handleChannelChange}
                                                 />
                                             );
@@ -171,9 +195,15 @@ class History extends Component {
                         </div>
                         {content.map((record, index) => {
                             return (
-                                <HistoryRecord
+                                <HistoryItem
                                     key={record.id}
-                                    record={record}
+                                    id={record.id} 
+                                    created_at={record.created_at} 
+                                    song_id={record.song_id} 
+                                    song_title={record.song_title} 
+                                    bookmark_id={record.bookmark_id} 
+                                    signedIn={signedIn}
+                                    onBookmarkChange={this.handleBookmark}
                                 />
                             );
                         })}
@@ -189,5 +219,9 @@ class History extends Component {
         );
     }
 }
+
+History.propTypes = {
+    signedIn: PropTypes.bool.isRequired
+};
 
 export default History;
